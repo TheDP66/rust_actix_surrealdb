@@ -23,7 +23,10 @@ async fn get_pizzas(db: Data<Database>) -> Result<Json<Vec<Pizza>>, PizzaError> 
 }
 
 #[post("/buypizza")]
-async fn buy_pizza(body: Json<BuyPizzaRequest>, db: Data<Database>) -> impl Responder {
+async fn buy_pizza(
+    body: Json<BuyPizzaRequest>,
+    db: Data<Database>,
+) -> Result<Json<Pizza>, PizzaError> {
     let is_valid = body.validate();
 
     match is_valid {
@@ -38,20 +41,26 @@ async fn buy_pizza(body: Json<BuyPizzaRequest>, db: Data<Database>) -> impl Resp
                 .await;
 
             match new_pizza {
-                Some(created) => {
-                    HttpResponse::Ok().body(format!("Created new pizza: {:?}", created))
-                }
-                None => HttpResponse::Ok().body("Error buying pizza"),
+                Some(created) => Ok(Json(created)),
+                None => Err(PizzaError::PizzaCreationFailure),
             }
         }
-        Err(_) => HttpResponse::Ok().body("pizza name required"),
+        Err(_) => Err(PizzaError::PizzaCreationFailure),
     }
 }
 
 #[patch("/updatepizza/{uuid}")]
-async fn update_pizza(update_pizza_url: Path<UpdatePizzaUrl>) -> impl Responder {
+async fn update_pizza(
+    update_pizza_url: Path<UpdatePizzaUrl>,
+    db: Data<Database>,
+) -> Result<Json<Pizza>, PizzaError> {
     let uuid = update_pizza_url.into_inner().uuid;
-    HttpResponse::Ok().body(format!("updating apizza {uuid}"))
+    let update_result = db.update_pizza(uuid).await;
+
+    match update_result {
+        Some(updated_pizza) => Ok(Json(updated_pizza)),
+        None => Err(PizzaError::NoSuchPizzaFound),
+    }
 }
 
 #[actix_web::main]
