@@ -2,10 +2,10 @@ use actix_web::{
     get, patch, post,
     web::Path,
     web::{Data, Json},
-    App, HttpResponse, HttpServer, Responder,
+    App, HttpServer,
 };
 use rust_actix_surrealdb::{
-    db::database::Database,
+    db::{database::Database, pizza_data_traits::PizzaDataTrait},
     error::pizza_error::PizzaError,
     models::pizza::{BuyPizzaRequest, Pizza, UpdatePizzaUrl},
 };
@@ -14,7 +14,7 @@ use validator::Validate;
 
 #[get("/pizzas")]
 async fn get_pizzas(db: Data<Database>) -> Result<Json<Vec<Pizza>>, PizzaError> {
-    let pizzas = db.get_all_pizzas().await;
+    let pizzas = Database::get_all_pizzas(&db).await;
 
     match pizzas {
         Some(found_pizzas) => Ok(Json(found_pizzas)),
@@ -36,9 +36,8 @@ async fn buy_pizza(
             let mut buffer = uuid::Uuid::encode_buffer();
             let new_uuid = uuid::Uuid::new_v4().simple().encode_lower(&mut buffer);
 
-            let new_pizza = db
-                .add_pizza(Pizza::new(String::from(new_uuid), pizza_name))
-                .await;
+            let new_pizza =
+                Database::add_pizza(&db, Pizza::new(String::from(new_uuid), pizza_name)).await;
 
             match new_pizza {
                 Some(created) => Ok(Json(created)),
@@ -55,7 +54,7 @@ async fn update_pizza(
     db: Data<Database>,
 ) -> Result<Json<Pizza>, PizzaError> {
     let uuid = update_pizza_url.into_inner().uuid;
-    let update_result = db.update_pizza(uuid).await;
+    let update_result = Database::update_pizza(&db, uuid).await;
 
     match update_result {
         Some(updated_pizza) => Ok(Json(updated_pizza)),
