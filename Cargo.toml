@@ -1,0 +1,16 @@
+[package]
+name = "rust_actix_surrealdb"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+serde = { version = "1.0.195", features = ["derive"] }
+actix-web = "4.4.1"
+async-trait = "0.1.77"
+derive_more = "0.99.17"
+json = "0.12.4"
+surrealdb = "1.0.2"
+uuid = "1.6.1"
+validator = { version = "0.16.1", features = ["derive"] }
